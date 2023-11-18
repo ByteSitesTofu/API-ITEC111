@@ -1,20 +1,19 @@
-<?php 
-// db connect
-
+<?php
 class DbConnect {
-  private $server = "localhost";
-  private $dbname = "lms";
-  private $user = "root";
-  private $pass = "";
-  
-  public function connect() {
-    try {
-      $conn = new PDO('mysql:host=' .$this->server .';dbname=' .$this->dbname, $this->user, $this->pass);
-      $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-      return $conn;
-    } catch (PDOException $e) {
-      echo 'Database Error: '. $e->getMessage();
-      die();
+    private $host = "localhost";
+    private $dbname = "lms";
+    private $username = "root";
+    private $password = "";
+
+    public function connect() {
+        try {
+            $conn = new PDO("mysql:host=$this->host;dbname=$this->dbname", $this->username, $this->password);
+            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            return $conn;
+        } catch (PDOException $e) {
+            echo "Connection failed: " . $e->getMessage();
+            die();
+        }
     }
-  }
 }
+?>
