@@ -14,7 +14,7 @@ $allowedMethods = ["GET", "POST", "PUT", "DELETE"];
 $method = $_SERVER["REQUEST_METHOD"];
 
 if (!in_array($method, $allowedMethods)) {
-    header("HTTP/1.1 405 Method Not Allowed");
+    header("405 Method Not Allowed");
     header("Allow: " . implode(", ", $allowedMethods));
     exit;
 }
@@ -23,10 +23,12 @@ switch ($method) {
     case "GET":
         // Read operation
         $id = $_GET["id"] ?? null;
+        $student_id = $_GET['student_id'] ?? null;
         $fname = $_GET["fname"] ?? null;
         $lname = $_GET["lname"] ?? null;
         $email = $_GET["email"] ?? null;
         $course_code = $_GET["course_code"] ?? null;
+        $is_deleted = $_GET["is_deleted"] ?? null;
 
         $student = [];
 
@@ -36,7 +38,13 @@ switch ($method) {
             $stmt->bindParam(":id", $id);
             $stmt->execute();
             $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } elseif ($fname !== null) {
+        } elseif ($student_id !== null) {
+            $sql = "SELECT * FROM student WHERE student_id = :student_id";
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam(":student_id", $student_id);
+            $stmt->execute();
+            $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }elseif ($fname !== null) {
             $sql = "SELECT * FROM student WHERE fname = :fname";
             $stmt = $db->prepare($sql);
             $stmt->bindParam(":fname", $fname);
@@ -60,7 +68,13 @@ switch ($method) {
             $stmt->bindParam(":course_code", $course_code);
             $stmt->execute();
             $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } else {
+        } elseif ($is_deleted !== null) {
+            $sql = "SELECT * FROM student WHERE is_deleted = :is_deleted";
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam(":is_deleted", $is_deleted);
+            $stmt->execute();
+            $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }else {
             $sql = "SELECT * FROM student";
             $stmt = $db->prepare($sql);
             $stmt->execute();
@@ -74,6 +88,7 @@ switch ($method) {
             $student = json_decode(file_get_contents("php://input"));
 
             if (empty($student->student_id) || empty($student->fname) || empty($student->lname) || empty($student->email) || empty($student->course_code)) {
+                http_response_code(400);
                 $response = ["message" => "Required fields cannot be null."];
                 echo json_encode($response);
                 break;
@@ -89,8 +104,10 @@ switch ($method) {
             $stmt->bindParam(":course_code", $student->course_code);
     
             if ($stmt->execute()) {
+                http_response_code(201);
                 $response = [ "message" => "Record created successfully."];
             } else {
+                http_response_code(500);
                 $response = [ "message" => "Failed to create record."];
             }
         echo json_encode($response);
@@ -101,14 +118,15 @@ switch ($method) {
         $studentId= $_GET["id"] ?? null;
         if ($studentId !== null) {
             $student = json_decode(file_get_contents("php://input"));
-            $sql = "UPDATE student SET fname = :fname, lname = :lname, email = :email, course_code = :course_code WHERE id = :id";
+            $sql = "UPDATE student SET student_id = :student_id, fname = :fname, lname = :lname, email = :email, course_code = :course_code WHERE id = :id";
             $stmt = $db->prepare($sql);
     
-            $stmt->bindParam(":id", $student->id);
+            $stmt->bindParam(":student_id", $student->student_id);
             $stmt->bindParam(":fname", $student->fname);
             $stmt->bindParam(":lname", $student->lname);
             $stmt->bindParam(":email", $student->email);
             $stmt->bindParam(":course_code", $student->course_code);
+            $stmt->bindParam(":id", $studentId);
     
             if ($stmt->execute()) {
                 $response = [ "message" => "Record updated successfully."];
@@ -142,7 +160,7 @@ switch ($method) {
         break;
 
     default:
-        http_response_code(404);
+        http_response_code(405);
         echo json_encode(["message" => "Unsupported method"]);
         break;
 }
